@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="MoneyDetailsPopup" t-inherit="point_of_sale.MoneyDetailsPopup" t-inherit-mode="extension" owl="1">
+        <xpath expr="//Dialog/div" position="replace">
+            <div class="money-details-multi-currency">
+                <t t-set="currencyKeys" t-value="getFilteredCurrencyKeys()"/>
+                <t t-set="showBaseCurrency" t-value="shouldShowBaseCurrency()"/>
+                
+                <t t-if="showBaseCurrency">
+                    <t t-if="state.moneyDetails and Object.keys(state.moneyDetails).length &gt; 0">
+                        <div class="currency-row-wrapper">
+                            <div class="currency-column-wrapper">
+                                <div class="currency-header-label">
+                                    <t t-esc="pos.currency.name"/>
+                                </div>
+                                <div class="denominations-list">
+                                    <t t-foreach="Object.keys(state.moneyDetails)" t-as="moneyValue" t-key="moneyValue">
+                                        <div class="d-flex align-items-center justify-content-center my-1">
+                                            <NumericInput class="'w-50'" tModel="[state.moneyDetails, moneyValue]" min="0"/>
+                                            <label class="oe_link_icon w-25 text-center" t-att-for="moneyValue">
+                                                <span class="ms-1" t-esc="env.utils.formatCurrency(_parseFloat(moneyValue), false)"/>
+                                                <span class="ms-1" t-esc="pos.currency.symbol"/>
+                                            </label>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+                
+                <t t-foreach="currencyKeys" t-as="mdKey" t-key="mdKey">
+                    <t t-if="mdKey_index % 2 == 0">
+                        <div class="currency-row-wrapper">
+                            <div class="currency-column-wrapper">
+                                <div class="currency-header-label">
+                                    <t t-esc="mdKey.replace('moneyDetails', '')"/>
+                                </div>
+                                <div class="denominations-list">
+                                    <t t-foreach="Object.keys(state[mdKey])" t-as="moneyValue" t-key="moneyValue">
+                                        <div class="d-flex align-items-center justify-content-center my-1">
+                                    <NumericInput class="'w-50'" tModel="[state[mdKey], moneyValue]" min="0"/>
+                                    <label class="oe_link_icon w-25 text-center" t-att-for="moneyValue">
+                                        <span class="ms-1" t-esc="env.utils.formatCurrency(_parseFloat(moneyValue), false)"/>
+                                                <span class="ms-1" t-esc="currency_symbol(mdKey.replace('moneyDetails', ''))"/>
+                                    </label>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                            <t t-if="!filterCurrencyName and mdKey_index + 1 &lt; currencyKeys.length">
+                                <t t-set="nextKey" t-value="currencyKeys[mdKey_index + 1]"/>
+                                <div class="currency-column-wrapper">
+                                    <div class="currency-header-label">
+                                        <t t-esc="nextKey.replace('moneyDetails', '')"/>
+                                    </div>
+                                    <div class="denominations-list">
+                                        <t t-foreach="Object.keys(state[nextKey])" t-as="moneyValue" t-key="moneyValue">
+                                            <div class="d-flex align-items-center justify-content-center my-1">
+                                                <NumericInput class="'w-50'" tModel="[state[nextKey], moneyValue]" min="0"/>
+                                                <label class="oe_link_icon w-25 text-center" t-att-for="moneyValue">
+                                                    <span class="ms-1" t-esc="env.utils.formatCurrency(_parseFloat(moneyValue), false)"/>
+                                                    <span class="ms-1" t-esc="currency_symbol(nextKey.replace('moneyDetails', ''))"/>
+                                                </label>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                    </t>
+                </t>
+            </div>
+        </xpath>
+        <xpath expr="//h4[hasclass('total-section')]" position="replace">
+            <h4 class="total-section ms-auto py-2">
+                <t t-foreach="computeTotalAllCurrencywithSymbol()" t-as="total" t-key="total_index">
+                    <span class="me-3">
+                        <t t-esc="total"/> <t t-esc="total_value"/>
+                    </span>
+                </t>
+            </h4>
+        </xpath>
+    </t>
+
+
+<!--    <t t-name="OpeningControlPopup" t-inherit="point_of_sale.OpeningControlPopup" t-inherit-mode="extension" >-->
+<!--        <xpath expr="//t[@t-set-slot='header']" position="replace">-->
+<!--            <t t-set-slot="header">-->
+<!--                <span style="width: 30%;text-align: left;">-->
+<!--                    Rate USD : -->
+<!--                    <span t-esc="this.pos.session.usd_rate"/>-->
+<!--                </span>-->
+<!--                <h4 class="modal-title text-break">-->
+<!--                    Opening Control-->
+<!--                </h4>-->
+<!--            </t>-->
+<!--        </xpath>-->
+<!--    </t>-->
+
+    <t t-name="ClosePosPopup" t-inherit="point_of_sale.ClosePosPopup" t-inherit-mode="extension" owl="1">
+        <xpath expr="//div[hasclass('payment-methods-overview')]" position="before">
+            <div class="w-100 mb-3" t-if="pos.session.oc_opening_bal_ids" >
+                <div class="d-flex align-items-center justify-content-between fs-3">
+                    Other Currency Open. Bal.
+                </div>
+                <div class="d-flex align-items-center justify-content-between border-start ps-2">
+                    <span>Currency</span>
+                    <span>Rate</span>
+                    <span>Balance</span>
+                </div>
+                <t t-foreach="props.oc_details" t-as="oc" t-key="oc_index">
+                    <div class="d-flex align-items-center justify-content-between border-start ps-2">
+                        <span t-out="oc[0]"/>
+                        <span>
+                            <t t-out="env.utils.formatCurrency(oc[1], false)"/>
+                        </span>
+                        <span>
+                            <span t-out="oc[2]"/>    
+                            <span t-out="oc[3]"/>  
+                        </span>
+                    </div>
+                </t>
+            </div>
+            <hr/>
+        </xpath>
+        
+        <!-- Change "Cash Count" label to "Total Cash Count in <base currency>" -->
+        <xpath expr="//div[@t-if='pos.config.cash_control']//label[contains(text(), 'Cash Count')]" position="replace">
+            <label class="form-label">
+                Total Cash Count in <t t-esc="(pos.currency || props.pos.currency).name"/>
+            </label>
+        </xpath>
+        
+        <!-- Add Change amount display after Payments Collected (for base currency only) -->
+        <xpath expr="//div[hasclass('payment-methods-overview')]//div[@t-if='props.default_cash_details.payment_amount']" position="after">
+            <div t-if="props.default_cash_details.change_amount != 0" class="d-flex align-items-center justify-content-between text-muted border-start ps-2">
+                <span>Change</span>
+                <span class="align-top text-danger" t-esc="env.utils.formatCurrency(props.default_cash_details.change_amount)"/>
+            </div>
+        </xpath>
+    </t>
+
+    <t t-name="CashMovePopup" t-inherit="point_of_sale.CashMovePopup" t-inherit-mode="extension" owl="1">
+        <xpath expr="//div[hasclass('input-amount')]/div[2]" position="replace">
+            <div class="d-flex align-items-center gap-2" t-attf-class="{{this.ui.isSmall ? 'mw-50 h-50' : 'w-25'}}">
+                <!-- Currency Symbol Display -->
+                <span class="currency-symbol-display fw-bold" style="min-width: 40px; text-align: center; font-size: 1.1em;">
+                    <t t-esc="selectedCurrency ? selectedCurrency.symbol : pos.currency.symbol"/>
+                </span>
+                <Input tModel="[state, 'amount']"
+                    isValid.bind="env.utils.isValidFloat"
+                    autofocus="true"
+                    getRef="(ref) => this.inputRef = ref" 
+                />
+                <select t-ref="oc_select" class="currency_select"  t-on-change="onSelectChange">
+                    <option t-att-value="pos.currency.id" >
+                        <t t-out="pos.currency.name"/>
+                    </option>
+                    <t t-foreach="pos.currencies" t-as="ocs" t-key="ocs_index">
+                        <option t-if="ocs.name != pos.currency.name" t-att-value="ocs.id">
+                            <t t-out="ocs.name"/>
+                        </option>
+                    </t>
+                </select>
+            </div>
+        </xpath>
+    </t>
+
+    <t t-name="point_of_sale.PaymentMethodBreakdown" t-inherit="point_of_sale.PaymentMethodBreakdown" t-inherit-mode="extension" owl="1">
+        <xpath expr="//div[hasclass('border-start')]" position="replace">
+            <div class="border-start small text-muted d-flex flex-column ps-2 ms-1">
+                <div t-foreach="props.transactions" t-as="payment" t-key="payment.id" class="d-flex justify-content-between">
+                    <span t-esc="payment.name"/>
+                    <span>
+                        <!-- Use backend-provided currency data directly -->
+                        <!-- Backend provides: amount (base currency TSH), other_curr_amt (foreign currency), other_curr_symbol -->
+                        <t t-set="baseAmount" t-value="payment.amount || 0"/>
+                        <t t-set="otherAmount" t-value="payment.other_curr_amt ? (+payment.other_curr_amt) : 0"/>
+                        <t t-if="otherAmount != 0 and payment.other_curr_symbol">
+                            <!-- Show foreign currency amount first -->
+                            <span style="margin-right: 10px;">
+                                [<t t-esc="Math.abs(otherAmount).toFixed(2)"/>
+                                <span style="margin-left: 3px;" t-esc="payment.other_curr_symbol"/>]
+                            </span>
+                                    </t>
+                        <!-- Show base currency amount (always in TSH) -->
+                        <span class="cash-sign me-1" t-esc="baseAmount &lt; 0 ? '-' : '+'" />
+                        <t t-esc="env.utils.formatCurrency(Math.abs(baseAmount))"/>
+                    </span>
+                </div>
+            </div>
+        </xpath>
+    </t>
+
+    <t t-name="sopan_pos_multicurrency.ProductCard"
+       t-inherit="point_of_sale.ProductCard"
+       t-inherit-mode="extension"
+       owl="1">
+        <!-- Move quantity badge to top-right corner -->
+        <xpath expr="//span[hasclass('product-cart-qty')]" position="replace">
+            <span t-if="props.productCartQty"
+                t-out="this.productQty"
+                class="product-cart-qty position-absolute top-0 end-0 m-1 px-2 rounded bg-black text-white fs-5 fw-bolder"
+                t-att-class="{'text-danger': this.productQty lt 0}"/>
+        </xpath>
+        
+        <!-- Add tax-included price display at the bottom of product card -->
+        <xpath expr="//div[hasclass('product-content')]" position="after">
+            <div class="px-2 pb-2 small text-muted">
+               <t t-set="tax_included_price" t-value="getTaxIncludedPrice()"/>
+                <t t-set="base_price" t-value="props.product.getPrice(pos.getOrder()?.pricelist_id || pos.config.pricelist_id, 1)"/>
+                <!-- Base currency price (TZS) - tax-included from pricelist and fiscal position -->
+<!--                <div class="fw-bold">-->
+<!--                    <t t-esc="env.utils.formatCurrency(base_price)"/>-->
+<!--                </div>-->
+            </div>
+             <div class="product-price px-2 pb-2 mt-auto">
+                <!-- Tax-included price (main price display) -->
+                <div class="fw-bold fs-6 text-center">
+                    <t t-esc="env.utils.formatCurrency(getTaxIncludedPrice())"/>
+                </div>
+            </div>
+        </xpath>
+    </t>
+
+    <!-- Add USD Price button to ControlButtons -->
+    <t t-name="sopan_pos_multicurrency.ControlButtons"
+       t-inherit="point_of_sale.ControlButtons"
+       t-inherit-mode="extension"
+       owl="1">
+        <!-- Add USD Price button in the remaining buttons section (dialog) -->
+        <xpath expr="//button[@class='control-button o_fiscal_position_button']" position="after">
+            <button t-if="this.pos.cashier._role != 'minimal' and currentOrder?.getSelectedOrderline()" 
+                    t-att-class="buttonClass" 
+                    t-on-click="() => this.clickUsdPrice()">
+                <i class="fa fa-dollar-sign me-1" role="img" aria-label="USD Price" title="Set unit price in USD" />
+                USD Price
+            </button>
+        </xpath>
+    </t>
+
+</templates>

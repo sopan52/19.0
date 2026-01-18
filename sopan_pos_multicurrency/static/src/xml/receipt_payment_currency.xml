@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <!-- Patch OrderReceipt to show currency amount in payment lines -->
+    <t t-name="sopan_pos_multicurrency.OrderReceipt"
+       t-inherit="point_of_sale.OrderReceipt"
+       t-inherit-mode="extension">
+        
+        <!-- Replace the payment lines section to add currency display -->
+        <xpath expr="//div[@class='paymentlines text-start pt-1']" position="replace">
+            <div class="paymentlines text-start pt-1" t-foreach="paymentLines" t-as="line" t-key="line_index">
+                <t t-esc="line.payment_method_id.name" />
+                <span t-out="formatCurrency(line.getAmount())" class="pos-receipt-right-align font-monospace"/>
+                <!-- Show converted amount in payment method currency if it's a foreign currency -->
+                <t t-set="currencyDisplay" t-value="line.getCurrencyAmountDisplay ? line.getCurrencyAmountDisplay() : false" />
+                <t t-if="!currencyDisplay and line.currency_amount_total and line.currency_amount_total > 0 and line.payment_currency_id">
+                    <t t-set="payCurrency" t-value="typeof line.payment_currency_id === 'object' ? line.payment_currency_id : null" />
+                    <t t-if="payCurrency and payCurrency.symbol">
+                        <t t-set="currencyDisplay" t-value="'(' + line.currency_amount_total.toFixed(2) + ' ' + payCurrency.symbol + ')'" />
+                    </t>
+                </t>
+                <t t-if="currencyDisplay">
+                    <br/>
+                    <span class="text-muted" style="font-size: 0.85em; margin-left: 1em;">
+                        <t t-esc="currencyDisplay"/>
+                    </span>
+                </t>
+            </div>
+        </xpath>
+        
+    </t>
+
+</templates>
+

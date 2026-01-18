@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="sopan_pos_multicurrency.NumberPopupSizePatch"
+       t-inherit="point_of_sale.NumberPopup"
+       t-inherit-mode="extension">
+        <xpath expr="//Dialog" position="attributes">
+            <attribute name="size">props.size || 'sm'</attribute>
+        </xpath>
+    </t>
+</templates>
+

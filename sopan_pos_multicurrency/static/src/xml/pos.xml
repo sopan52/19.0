@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<templates id="template" xml:space="preserve">
+	
+	<!-- ClosePosPopup customization - Per-currency cash control sections -->
+	<t t-name="sopan_pos_multicurrency.ClosePosPopup"
+       t-inherit="point_of_sale.ClosePosPopup"
+       t-inherit-mode="extension">
+		<!-- Hide the standard payment methods overview (it shows extra count inputs like "BANK ... Count").
+		     We rely on the per-currency cash control sections below instead. -->
+		<xpath expr="//Dialog//div[hasclass('payment-methods-overview')]" position="attributes">
+			<attribute name="class">payment-methods-overview d-none</attribute>
+		</xpath>
+
+		<!-- Remove coins button and make Cash Count input readonly -->
+		<xpath expr="//div[@t-if='pos.config.cash_control']//div[hasclass('d-flex','w-100','gap-2','mt-1')]" position="replace">
+			<div class="d-flex w-100 gap-2 mt-1">
+				<Input tModel="[state.payments[props.default_cash_details.id], 'counted']"
+					callback.bind="(value) => this.setManualCashInput(value)"
+					isValid.bind="env.utils.isValidFloat" 
+					class="'cash-input w-100'"
+					readonly="true"/>
+				<button class="icon fa fa-clone btn btn-secondary" t-on-click="autoFillCashCount" />
+			</div>
+		</xpath>
+
+		<!-- Hide the extra bank "Count" inputs shown by the core closing popup.
+		     We do NOT use per-payment-method count inputs; we only use the per-currency cash control sections. -->
+		<xpath expr="//Dialog//div[@t-foreach='props.non_cash_payment_methods']//t[@t-if='_showDiff']" position="replace">
+			<t/>
+		</xpath>
+		
+		<!-- Add per-currency display after the payment-methods-overview div -->
+		<xpath expr="//Dialog//div[hasclass('payment-methods-overview')]" position="after">
+			<!-- Per-Currency Cash Control Sections -->
+			<!-- Use state.currencyGroups (reactive) - will update automatically when groups are computed -->
+			<!-- Fallback to getCurrencyGroupsForTemplate() if state.currencyGroups is not available -->
+			<t t-set="currencyGroups" t-value="(state.currencyGroups and state.currencyGroups.length) ? state.currencyGroups : getCurrencyGroupsForTemplate()"/>
+			<!-- Debug: Show currencyGroups length -->
+			<t t-if="currencyGroups and currencyGroups.length &gt; 0">
+				<t t-foreach="currencyGroups" t-as="currencyGroup" t-key="currencyGroup.currency.id">
+					<div class="w-100 mb-4 currency-control-section" style="border: 2px solid #007bff; padding: 15px; border-radius: 4px; margin-bottom: 20px; background: #f8f9fa;">
+						<h5 class="mb-3" style="font-weight: bold; color: #495057;">
+							<t t-esc="(currencyGroup.currency.name || '') + ' (' + (currencyGroup.currency.symbol || '') + ')'"/> - Cash Control
+						</h5>
+						
+						<!-- Starting Balance -->
+						<div class="d-flex align-items-center justify-content-between mb-2">
+							<span class="text-muted">Starting Balance:</span>
+							<span class="fw-bold">
+								<!-- Show opening in this currency group's currency -->
+								<t t-if="currencyGroup.opening &gt; 0">
+									<span>[<t t-esc="currencyGroup.opening.toFixed(2)"/><t t-esc="currencyGroup.currency.symbol"/>]</span>
+								</t>
+								<!-- Show foreign currency openings (only for base currency group) -->
+								<t t-if="currencyGroup.opening_original_currencies and currencyGroup.opening_original_currencies.length &gt; 0">
+									<t t-foreach="currencyGroup.opening_original_currencies" t-as="orig" t-key="orig.currency.id">
+										<span class="ms-1">[<t t-esc="orig.amount.toFixed(2)"/><t t-esc="orig.currency.symbol"/>]</span>
+									</t>
+								</t>
+								<!-- If no opening at all, show 0 -->
+								<t t-if="currencyGroup.opening == 0 and (!currencyGroup.opening_original_currencies or currencyGroup.opening_original_currencies.length == 0)">
+									<span>0.00<t t-esc="currencyGroup.currency.symbol"/></span>
+								</t>
+							</span>
+						</div>
+						
+						<!-- Cash In/Out Movements -->
+						<t t-if="currencyGroup.cashMovements and currencyGroup.cashMovements.length &gt; 0">
+							<div class="mb-2">
+								<span class="text-muted d-block mb-1">Cash In/Out Movements:</span>
+								<t t-foreach="currencyGroup.cashMovements" t-as="move" t-key="move.id">
+									<div class="d-flex align-items-center justify-content-between text-muted border-start ps-2 mb-1">
+										<span>
+											<span t-esc="move.amount &lt; 0 ? '-' : '+'"/>
+											<t t-esc="move.name"/>
+										</span>
+										<span>
+											<!-- Show amount in the GROUP currency (EUR/AED/IQD/etc). -->
+											<t t-set="groupAmountDisplay" t-value="Math.abs(move.amount)"/>
+											<t t-esc="groupAmountDisplay.toFixed(2)"/>
+											<t t-esc="currencyGroup.currency.symbol"/>
+											<!-- If group currency is not base, also show base (USD) equivalent in brackets -->
+											<t t-set="baseCurrency" t-value="pos.currency || props.pos.currency"/>
+											<t t-if="currencyGroup.currency.id != baseCurrency.id and move.base_amount != null">
+												<span class="ms-1">[<t t-esc="Math.abs(move.base_amount).toFixed(2)"/><t t-esc="baseCurrency.symbol"/>]</span>
+											</t>
+										</span>
+									</div>
+								</t>
+							</div>
+						</t>
+						
+						<!-- Payments Collected -->
+						<t t-if="currencyGroup.paymentsCollected != 0">
+							<div class="d-flex align-items-center justify-content-between mb-2 text-muted border-start ps-2">
+								<span>Payments Collected:</span>
+								<span>
+									<t t-esc="currencyGroup.paymentsCollected.toFixed(2)"/>
+									<t t-esc="currencyGroup.currency.symbol"/>
+								</span>
+							</div>
+						</t>
+
+						<!-- Bank payments collected (DISPLAY ONLY) - show in the currency of the bank payment (does NOT affect expected ending) -->
+						<t t-if="currencyGroup.bankPaymentsCollected and currencyGroup.bankPaymentsCollected != 0">
+							<div class="d-flex align-items-center justify-content-between mb-2 text-muted border-start ps-2">
+								<span>Bank Payments (Not Cash):</span>
+								<span>
+									<t t-esc="currencyGroup.bankPaymentsCollected.toFixed(2)"/>
+									<t t-esc="currencyGroup.currency.symbol"/>
+								</span>
+							</div>
+						</t>
+						
+						<!-- Change amount (shown separately as negative) - ONLY for base currency -->
+						<!-- CRITICAL: Change is ALWAYS in base currency (TZS), so only show it for base currency group -->
+						<t t-set="baseCurrency" t-value="pos.currency || props.pos.currency"/>
+						<t t-if="currencyGroup.currency.id == baseCurrency.id and currencyGroup.changeAmount &amp;&amp; currencyGroup.changeAmount != 0">
+							<div class="d-flex align-items-center justify-content-between mb-2 text-danger border-start ps-2">
+								<span>Change:</span>
+								<span>
+									<t t-esc="currencyGroup.changeAmount.toFixed(2)"/>
+									<t t-esc="baseCurrency.symbol"/>
+								</span>
+							</div>
+						</t>
+						
+						<!-- Expected Ending Balance -->
+						<div class="d-flex align-items-center justify-content-between mb-2" style="border-top: 1px solid #dee2e6; padding-top: 8px;">
+							<span class="fw-bold">Expected Ending Balance:</span>
+							<span class="fw-bold fs-5">
+								<t t-esc="(currencyGroup.expectedEndingWithBank || (currencyGroup.expectedEnding + (currencyGroup.bankPaymentsCollected || 0))).toFixed(2)"/>
+								<t t-esc="currencyGroup.currency.symbol"/>
+							</span>
+						</div>
+						
+						<!-- Counted Input Field for this currency -->
+						<div class="mb-2">
+							<label class="form-label mb-1">
+								<t t-esc="currencyGroup.currency.name"/> Count:
+							</label>
+							<div class="d-flex gap-2 align-items-center">
+                <Input tModel="[state.currencyCounts || {}, currencyGroup.currency.id]"
+									callback.bind="(value) => this.updateCurrencyCounted(currencyGroup, value)"
+									isValid.bind="(value) => this.validateCurrencyCounted(currencyGroup, value)"
+									class="'cash-input flex-grow-1'"/>
+								<button type="button" 
+									class="btn btn-sm btn-secondary d-flex align-items-center justify-content-center"
+									style="min-width: 40px; height: 40px;"
+									t-on-click="() => this.copyExpectedEnding(currencyGroup)"
+									title="Copy Expected Ending Balance">
+									<i class="fa fa-copy" role="img" aria-label="Copy"/>
+								</button>
+								<button type="button" 
+									class="btn btn-sm btn-secondary d-flex align-items-center justify-content-center"
+									style="min-width: 40px; height: 40px;"
+									t-on-click="(ev) => this.openDetailsPopup(ev, currencyGroup)"
+									title="Open money details popup">
+									<i class="fa fa-money" role="img" aria-label="Coins"/>
+								</button>
+								<span class="align-self-center text-muted" t-esc="currencyGroup.currency.symbol"/>
+							</div>
+						</div>
+						
+						<!-- Counted Display and Difference -->
+						<div class="d-flex align-items-center justify-content-between mb-2">
+							<span class="text-muted">Counted:</span>
+							<span class="fw-bold">
+								<t t-esc="(currencyGroup.counted || 0).toFixed(2)"/>
+								<t t-esc="currencyGroup.currency.symbol"/>
+							</span>
+						</div>
+						
+						<div class="d-flex align-items-center justify-content-between mb-3" t-att-class="{'text-danger fw-bold': Math.abs(currencyGroup.difference || 0) >= 0.01}">
+							<span>Difference:</span>
+							<span class="cash-difference">
+								<t t-esc="(currencyGroup.difference || 0).toFixed(2)"/>
+								<t t-esc="currencyGroup.currency.symbol"/>
+							</span>
+						</div>
+					</div>
+				</t>
+			</t>
+		</xpath>
+	</t>
+
+</templates>
+

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="point_of_sale.OpeningControlPopup" t-inherit="point_of_sale.OpeningControlPopup" t-inherit-mode="extension" owl="1">
+        <xpath expr="//div[@class='opening-cash-section mb-3']" position="replace">
+            <div class="opening-cash-section mb-3" t-if="this.cashMethodCount">
+                <label class="form-label">Opening cash</label>
+                <div class="cash-input-sub-section d-flex flex-column gap-3">
+                    <!-- Base Currency Input -->
+                    <div class="currency-input-group d-flex gap-1 align-items-center">
+                        <div t-att-class="{ 'w-50': !ui.isSmall }" class="flex-grow-1 opening-cash-input-wrapper">
+                            <Input tModel="[state, 'openingCash']"
+                                isValid.bind="env.utils.isValidFloat"
+                                callback.bind="handleInputChange"
+                                autofocus="true"
+                                placeholder.translate="Opening Balance"/>
+                        </div>
+                        <div class="currency-label ms-2">
+                            <span t-esc="pos.currency ? pos.currency.name : ''"/>
+                        </div>
+                        <div class="button icon btn btn-secondary btn-lg lh-lg" 
+                            t-on-click="(ev) => { console.log('🔵 Button clicked!', ev); this.openDetailsPopupBaseCurrency(); }" 
+                            t-att-title="'Open money details for ' + (pos.currency ? pos.currency.name : '')">
+                            <i class="fa fa-money" role="img" t-att-title="'Open money details for ' + (pos.currency ? pos.currency.name : '')"/>
+                        </div>
+                    </div>
+                    <!-- Foreign Currency Inputs -->
+                    <t t-foreach="getActiveCurrencies()" t-as="currency" t-key="currency.id">
+                        <div class="currency-input-group d-flex gap-1 align-items-center">
+                            <div t-att-class="{ 'w-50': !ui.isSmall }" class="flex-grow-1">
+                                <Input tModel="[state, 'openingCash_' + currency.id]"
+                                    isValid.bind="env.utils.isValidFloat"
+                                    callback.bind="updateOpeningNotes"
+                                    placeholder.translate="Opening Balance"/>
+                            </div>
+                            <div class="currency-label ms-2">
+                                <span t-esc="currency.name"/>
+                            </div>
+                            <button class="icon fa fa-money btn btn-secondary btn-lg" 
+                                t-on-click="(ev) => this.openDetailsPopupMultiCurrency(ev, currency.id)" 
+                                type="button"
+                                t-att-title="'Open money details for ' + currency.name"/>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </xpath>
+    </t>
+</templates>
+

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+	<record id="view_pos_session_form_inherit" model="ir.ui.view">
+		<field name="name">pos.session.form.inherit</field>
+		<field name="model">pos.session</field>
+		<field name="inherit_id" ref="point_of_sale.view_pos_session_form"/>
+		<field name="arch" type="xml">
+			<field name="start_at" position="after">
+				<field name="oc_opening_cash_details" invisible="1"/>
+				<field name="oc_opening_bal_ids" readonly="1">
+					<list>
+						<field name="currency_id"/>
+						<field name="opening_total"/>
+						<field name="symbol"/>
+					</list>
+				</field>
+			</field>
+			
+			<!-- Add ending balance fields after stop_at or cash_register_balance_end_real -->
+			<xpath expr="//field[@name='stop_at']" position="after">
+				<separator string="Ending Balances (Multi-Currency)"/>
+<!--				<group>-->
+<!--					<group>-->
+<!--					</group>-->
+<!--					<group>-->
+<!--						<field name="total_ending_balance_base" readonly="1" widget="monetary" options="{'currency_field': 'company_id.currency_id'}"/>-->
+<!--					</group>-->
+<!--				</group>-->
+				<field name="currency_closing_balances" invisible="1"/>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="pos_payment_method_view_form_inherit" model="ir.ui.view">
+		<field name="name">pos.payment.method.form.inherit</field>
+		<field name="model">pos.payment.method</field>
+		<field name="inherit_id" ref="point_of_sale.pos_payment_method_view_form"/>
+		<field name="arch" type="xml">
+			<field name="journal_id" position="after">
+				<field name="currency_of_cash_control"
+					   help="Set this to allow the payment method to use a journal in foreign currency. When set, the journal currency must match this currency. The journal's default account will be used for cash, and the journal's loss/profit accounts will be used for cash differences."/>
+			</field>
+		</field>
+	</record>
+
+	<record id="pos_bills_view_tree_inherit" model="ir.ui.view">
+		<field name="name">pos.bill.tree.inherit</field>
+		<field name="model">pos.bill</field>
+		<field name="inherit_id" ref="point_of_sale.view_pos_bill_tree"/>
+		<field name="arch" type="xml">
+			<field name="pos_config_ids" position="after">
+				<field name="currency_id"/>
+			</field>
+		</field>
+	</record>
+
+	<!-- Show multi-currency payment details on POS Order -> Payments tab -->
+	<record id="view_pos_order_form_payment_currency_fields" model="ir.ui.view">
+		<field name="name">pos.order.form.payment.currency.fields</field>
+		<field name="model">pos.order</field>
+		<field name="inherit_id" ref="point_of_sale.view_pos_pos_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//page[@name='payments']//field[@name='payment_ids']//list//field[@name='amount']" position="after">
+				<field name="payment_currency_id" optional="show"/>
+				<field name="currency_amount_total" optional="show"/>
+				<field name="payment_currency_rate" optional="show"/>
+			</xpath>
+		</field>
+	</record>
+
+	<!-- Make Amount Currency and Currency columns visible in Journal Items view -->
+	<record id="view_move_line_tree_amount_currency" model="ir.ui.view">
+		<field name="name">account.move.line.tree.amount.currency</field>
+		<field name="model">account.move.line</field>
+		<field name="inherit_id" ref="account.view_move_line_tree"/>
+		<field name="arch" type="xml">
+			<!-- Make currency_id and amount_currency visible by default -->
+			<xpath expr="//field[@name='amount_currency']" position="attributes">
+				<attribute name="optional">show</attribute>
+				<attribute name="invisible">0</attribute>
+			</xpath>
+			<xpath expr="//field[@name='currency_id']" position="attributes">
+				<attribute name="optional">show</attribute>
+				<attribute name="invisible">0</attribute>
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

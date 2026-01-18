@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <!-- Patch PaymentScreenPaymentLines to show converted currency amount -->
+    <t t-name="sopan_pos_multicurrency.PaymentScreenPaymentLines"
+       t-inherit="point_of_sale.PaymentScreenPaymentLines"
+       t-inherit-mode="extension">
+        
+        <!-- Patch payment line - add currency after payment method name for both selected and unselected -->
+        <!-- For selected lines: after payment-name span -->
+        <xpath expr="//span[@class='payment-name']" position="after">
+            <t t-set="currencyDisplay" t-value="line.getCurrencyAmountDisplay()" />
+            <t t-if="currencyDisplay">
+                <span class="text-muted ms-2" style="font-size: 0.85em;">
+                    <t t-esc="currencyDisplay"/>
+                </span>
+            </t>
+        </xpath>
+        
+        <!-- For unselected lines: replace the payment-infos div to add currency -->
+        <!-- Target payment-infos inside paymentline that doesn't have selected class -->
+        <xpath expr="//div[hasclass('paymentline') and not(hasclass('selected'))]/div[hasclass('payment-infos')]" position="replace">
+            <div class="payment-infos d-flex align-items-center justify-content-between flex-grow-1 px-3 py-3 text-truncate cursor-pointer fs-2" t-on-click="() => this.selectLine(line)">
+                <div class="d-flex align-items-center">
+                    <span class="payment-name"><t t-esc="line.payment_method_id?.name" /></span>
+                    <t t-set="currencyDisplay" t-value="line.getCurrencyAmountDisplay()" />
+                    <t t-if="currencyDisplay">
+                        <span class="text-muted ms-2" style="font-size: 0.85em;">
+                            <t t-esc="currencyDisplay"/>
+                        </span>
+                    </t>
+                </div>
+                <div class="payment-amount px-3">
+                    <PriceFormatter price="env.utils.formatCurrency(line.getAmount())" />
+                </div>
+            </div>
+        </xpath>
+        
+    </t>
+
+</templates>
+

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <!-- Patch PaymentScreenMethods to show currency info on payment method buttons -->
+    <t t-name="sopan_pos_multicurrency.PaymentScreenMethods"
+       t-inherit="point_of_sale.PaymentScreenMethods"
+       t-inherit-mode="extension">
+        
+        <!-- Replace the amount display to show both base and foreign currency -->
+        <xpath expr="//span[hasclass('text-muted')]" position="replace">
+            <t t-set="pmCurrency" t-value="paymentMethod.currency_of_cash_control" />
+            <t t-set="currencyObj" t-value="typeof pmCurrency === 'object' ? pmCurrency : (Array.isArray(pmCurrency) ? pos.models['res.currency'].get(pmCurrency[0]) : pos.models['res.currency'].get(pmCurrency))" />
+            
+            <!-- Show base currency amount -->
+            <span class="text-muted" t-esc="pos.getPaymentMethodFmtAmount(paymentMethod, currentOrder)"/>
+            
+            <!-- Show foreign currency amount if applicable -->
+            <t t-if="currencyObj and currencyObj.id !== pos.currency.id">
+                <br/>
+                <t t-set="remainingDue" t-value="currentOrder.remainingDue || 0" />
+                <t t-set="rate" t-value="currencyObj.rate || 0" />
+                <t t-set="inverse_rate" t-value="currencyObj.inverse_rate || 0" />
+                <!-- Convert base currency to foreign currency -->
+                <!-- Dynamic module semantics: rate = foreign per 1 base, inverse_rate = base per 1 foreign -->
+                <t t-set="foreignAmount" t-value="rate and rate &gt; 0 ? (remainingDue * rate) : (inverse_rate and inverse_rate &gt; 0 ? (remainingDue / inverse_rate) : 0)" />
+                <t t-set="dp" t-value="currencyObj.decimal_places != null ? currencyObj.decimal_places : 2" />
+                <span class="text-muted" style="font-size: 0.85em;">
+                    (<t t-esc="foreignAmount.toFixed(dp)"/> <t t-esc="currencyObj.symbol || currencyObj.name"/>)
+                </span>
+            </t>
+        </xpath>
+        
+    </t>
+
+</templates>
+
