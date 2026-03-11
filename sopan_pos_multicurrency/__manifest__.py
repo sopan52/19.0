@@ -12,7 +12,7 @@
     'category': 'Point Of Sale',
     'author': 'Sopan Digital',
     'license': 'OPL-1',
-    'price': 90,
+    'price': 120,
     'currency': 'USD',
     "depends": ["base","point_of_sale","account"],
     "data": [
