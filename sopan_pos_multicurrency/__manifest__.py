@@ -1,12 +1,16 @@
 {
-    'name': 'POS Dynamic Multi-Currency Cash Control',
-    'summary': 'Dynamic multi-currency cash control (opening/closing, cash in/out, payments) for any currencies configured on POS payment methods.',
+    'name': 'Odoo POS Multi Currency | Point of Sale Multi-Currency | POS Cash Control Multi-Currency | POS Multi-Currency Payments & Cash In/Out | Multi Currency Cash Drawer | POS Currency Exchange | Restaurant Multi-Currency Management | Odoo 19 POS Multi-Currency Support | Dynamic POS Currency Converter',
+    'summary': 'Universal multi-currency solution for Odoo POS: cash control, opening/closing balances, cash in/out, and payments with live exchange rates for retail and restaurants.',
     'description': """
-        Using this apps you can add cash control in multi currency in POS.
-            - Multi currency cash in 
-            - Multi currency cash out
-            - Multi currency dynamic enable based working 
-            - Dynamic coin adding option in cash-in and cash-out
+        POS Dynamic Multi-Currency Cash Control is a comprehensive solution for managing multi-currency cash operations in Odoo Point of Sale (POS).
+        
+        Key Features:
+        - Dynamic multi-currency opening and closing balance per session.
+        - Multi-currency cash in and cash out operations with reason tracking.
+        - Support for any currency configured on POS payment methods.
+        - Real-time currency conversion using Odoo's live exchange rates.
+        - Detailed multi-currency breakdown on POS receipts and session reports.
+        - Dynamic coin/denomination adding for precise cash management.
     """,
     'version': '19.0.1.0.0',
     'category': 'Point Of Sale',
